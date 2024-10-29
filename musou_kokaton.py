@@ -243,6 +243,13 @@ class Score:
         
         
 class Drop_item(pg.sprite.Sprite):
+    """
+    ビームがあたった敵機からアイテムをドロップさせるクラス
+    ドロップしたアイテムは拾うとスコアが変動する
+    いくらか時間がたったらアイテムは消失する(lifeとupdateメソッドで管理)
+    item_dictのvalueはタプルで構成 0番は画像ファイル,1番は接触した時に変動するスコア
+    イニシャライザするときに確率でどのアイテムを落とすかをきめる
+    """
     chicken_img = pg.image.load(f"fig/chicken.png")
     beef_img = pg.image.load(f"fig/beef.png")
     shake_img = pg.image.load(f"fig/shake.png")
@@ -250,21 +257,21 @@ class Drop_item(pg.sprite.Sprite):
     
     def __init__(self,enemy):
         super().__init__()
-        num = random.randint(0,8)
+        num = random.randint(0,8)  # 乱数でどれを出すかきめる どれも1/3で出るようにしている
         if num<3:
             num = 0
         elif 3<=num<6:
             num = 3
         elif 6<= num:
             num = 6
-        self.image= __class__.item_dict[num][0]
-        self.score = __class__.item_dict[num][1]
-        self.rect = enemy.rect
-        self.life = 500
+        self.image= __class__.item_dict[num][0]  # 画像取り出し
+        self.score = __class__.item_dict[num][1]  # スコア取り出し
+        self.rect = enemy.rect  # 破壊された敵の座標にアイテムを描画したいのでenemyのrectを使う
+        self.life = 400
     
     def update(self):
         self.life-=1
-        if self.life <0:
+        if self.life <0:  # 時間経過でアイテム消去
             self.kill()
 
 
@@ -304,7 +311,7 @@ def main():
             exps.add(Explosion(emy, 100))  # 爆発エフェクト
             score.value += 10  # 10点アップ
             bird.change_img(6, screen)  # こうかとん喜びエフェクト
-            if random.random() <1:
+            if random.random() <0.5:  # 何割かの確率でアイテムを落とすようにする(毎回落ちていたら面白くなさそう)
                 drop_items.add(Drop_item(emy))
 
         for bomb in pg.sprite.groupcollide(bombs, beams, True, True).keys():  # ビームと衝突した爆弾リスト
@@ -318,7 +325,7 @@ def main():
             time.sleep(2)
             return
         for item in pg.sprite.spritecollide(bird,drop_items,True):
-            score.value += item.score
+            score.value += item.score  # 拾ったら各アイテムに定められたスコア分だけscoreに加える
         
         drop_items.update()
         drop_items.draw(screen)
