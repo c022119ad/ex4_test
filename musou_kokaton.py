@@ -240,14 +240,41 @@ class Score:
     def update(self, screen: pg.Surface):
         self.image = self.font.render(f"Score: {self.value}", 0, self.color)
         screen.blit(self.image, self.rect)
+        
+        
+class Drop_item(pg.sprite.Sprite):
+    chicken_img = pg.image.load(f"fig/chicken.png")
+    beef_img = pg.image.load(f"fig/beef.png")
+    shake_img = pg.image.load(f"fig/shake.png")
+    item_dict = {0:(chicken_img,-20),3:(beef_img,20),6:(shake_img,10)}
+    
+    def __init__(self,enemy):
+        super().__init__()
+        num = random.randint(0,8)
+        if num<3:
+            num = 0
+        elif 3<=num<6:
+            num = 3
+        elif 6<= num:
+            num = 6
+        self.image= __class__.item_dict[num][0]
+        self.score = __class__.item_dict[num][1]
+        self.rect = enemy.rect
+        self.life = 500
+    
+    def update(self):
+        self.life-=1
+        if self.life <0:
+            self.kill()
 
 
 def main():
     pg.display.set_caption("真！こうかとん無双")
     screen = pg.display.set_mode((WIDTH, HEIGHT))
     bg_img = pg.image.load(f"fig/pg_bg.jpg")
-    score = Score()
 
+    score = Score()
+    drop_items = pg.sprite.Group()
     bird = Bird(3, (900, 400))
     bombs = pg.sprite.Group()
     beams = pg.sprite.Group()
@@ -277,6 +304,8 @@ def main():
             exps.add(Explosion(emy, 100))  # 爆発エフェクト
             score.value += 10  # 10点アップ
             bird.change_img(6, screen)  # こうかとん喜びエフェクト
+            if random.random() <1:
+                drop_items.add(Drop_item(emy))
 
         for bomb in pg.sprite.groupcollide(bombs, beams, True, True).keys():  # ビームと衝突した爆弾リスト
             exps.add(Explosion(bomb, 50))  # 爆発エフェクト
@@ -288,7 +317,11 @@ def main():
             pg.display.update()
             time.sleep(2)
             return
-
+        for item in pg.sprite.spritecollide(bird,drop_items,True):
+            score.value += item.score
+        
+        drop_items.update()
+        drop_items.draw(screen)
         bird.update(key_lst, screen)
         beams.update()
         beams.draw(screen)
